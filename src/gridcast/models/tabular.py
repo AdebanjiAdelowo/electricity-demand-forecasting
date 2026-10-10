@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import replace
 
 import lightgbm as lgb
@@ -16,6 +17,7 @@ from gridcast.features.build import FeatureSpec, finite_rows, make_features, one
 from gridcast.models.base import Forecaster, long_frame, train_mask
 
 CATEGORICAL = ["c_hour", "c_dow"]
+N_JOBS = int(os.environ.get("GRIDCAST_JOBS", "6"))  # shared machine: do not take every core
 
 
 class _Tabular(Forecaster):
@@ -89,7 +91,7 @@ class LightGBMForecaster(_Tabular):
         self.probabilistic = quantiles
         self.p = dict(n_estimators=n_estimators, num_leaves=num_leaves, learning_rate=learning_rate,
                       min_child_samples=40, subsample=0.8, subsample_freq=1, colsample_bytree=0.8,
-                      reg_lambda=1.0, random_state=seed, n_jobs=-1, verbose=-1)
+                      reg_lambda=1.0, random_state=seed, n_jobs=N_JOBS, verbose=-1)
         self.qp = dict(self.p, n_estimators=q_estimators, num_leaves=q_leaves, learning_rate=0.08)
         self.qmodels: dict = {}
 

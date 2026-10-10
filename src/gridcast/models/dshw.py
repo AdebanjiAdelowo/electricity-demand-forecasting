@@ -12,6 +12,11 @@ makes the daily (24 h) and weekly (168 h) seasonal effects multiplicative.
 
 One recursive pass yields the state at every hour, so forecasts for every
 origin and horizon are obtained by indexing, without refitting per origin.
+
+The four parameters are estimated by minimising the mean absolute log error
+averaged over several horizons (1, 24, 48, 168 h by default). Fitting on
+one-step errors alone drives alpha towards 1, which is excellent one hour
+ahead and worse than a daily naive forecast one day ahead.
 """
 
 from __future__ import annotations
@@ -64,21 +69,28 @@ class DoubleSeasonalHW(Forecaster):
     family = "statistical"
     strategy = "recursive"
 
-    def __init__(self, fit_years: float = 2.0):
+    def __init__(self, fit_years: float = 2.0, loss_horizons=(1, 24, 48, 168)):
         super().__init__()
         self.fit_years = fit_years
+        self.loss_horizons = tuple(loss_horizons)
         self.params: tuple[float, float, float, float] | None = None
 
     def fit(self, df, fold, horizons):
         z = np.log(fit_slice(df, fold)["demand"].to_numpy(float))
         z = z[-int(self.fit_years * 8766) - 2 * S2:]
 
+        hs = np.array(self.loss_horizons)
+        t0 = 2 * S2
+        pos = np.arange(t0, len(z) - hs.max())
+
         def loss(theta):
             a, dl, om, phi = _unpack(theta)
-            _, _, _, e = dshw_filter(z, a, dl, om)
-            e = e[2 * S2:]
-            r = e[1:] - phi * e[:-1]  # one-step error after AR(1) correction
-            return float(np.mean(r**2))
+            lvl, d, w, e = dshw_filter(z, a, dl, om)
+            tot = 0.0
+            for h in hs:
+                zhat = lvl[pos] + d[pos + h - S1 * (-(-h // S1))] + w[pos + h - S2 * (-(-h // S2))] + (phi**h) * e[pos]
+                tot += float(np.mean(np.abs(z[pos + h] - zhat)))
+            return tot / len(hs)
 
         res = minimize(loss, x0=[-2.0, -1.0, -1.0, 2.0], method="Nelder-Mead",
                        options={"maxiter": 250, "xatol": 1e-3, "fatol": 1e-10})

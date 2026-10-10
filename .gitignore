@@ -10,3 +10,4 @@ results/scratch/
 .DS_Store
 .env
 dist/
+results/logs/
