@@ -70,8 +70,8 @@ class Arrays:
         self.n = len(df)
         if weather:
             self.wx = {"oracle": torch.tensor(_wx_block(df["temp"], df["rh"], df["wind"])[None], device=device)}
-            if "temp_d1" in df:
-                leads = [_wx_block(df[f"temp_d{d}"], df[f"rh_d{d}"], df[f"wind_d{d}"]) for d in config.FORECAST_LEAD_DAYS]
+            if "temp_c1" in df:
+                leads = [_wx_block(df[f"temp_c{d}"], df[f"rh_c{d}"], df[f"wind_c{d}"]) for d in config.FORECAST_LEAD_DAYS]
                 self.wx["forecast"] = torch.tensor(np.stack(leads), device=device)
             self.lead_idx = torch.tensor([config.forecast_lead_day(h) - 1 for h in horizons], device=device)
         valid = np.isfinite(m)
@@ -215,8 +215,8 @@ class TrainConfig:
     hidden: int = 96
     layers: int = 2
     weather: bool = True
-    epochs: int = 30
-    patience: int = 4
+    epochs: int = 20
+    patience: int = 3
     batch_size: int = 512
     lr: float = 1e-3
     weight_decay: float = 1e-5

@@ -37,6 +37,8 @@ def synthetic_frame(n_days: int = 500, seed: int = 0, start: str = "2023-01-01 0
         df[f"wind_d{d}"] = df["wind"]
         df[f"tmin_d{d}"] = df["tmin"] + noise
         df[f"tmax_d{d}"] = df["tmax"] + noise
+        for v in ("temp", "rh", "wind", "tmin", "tmax"):
+            df[f"{v}_c{d}"] = df[f"{v}_d{d}"]
     return df
 
 

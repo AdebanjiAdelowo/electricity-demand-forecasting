@@ -1,5 +1,5 @@
 {
-  "dataset_version": "eia930-TEX+openmeteo@2026-10-09",
+  "dataset_version": "eia930-TEX+openmeteo@2026-10-10",
   "region": "ERCOT (Electric Reliability Council of Texas)",
   "time_index": "UTC, hour ending",
   "local_time_zone": "America/Chicago",
@@ -48,6 +48,7 @@
     }
   },
   "nwp_model": "gfs_seamless",
+  "nwp_columns": "<var>_d<k>: raw forecast issued k days before valid time; <var>_c<k>: causally bias-corrected",
   "nwp_first_valid": {
     "temp_d1": "2024-01-19 13:00:00+00:00",
     "temp_d7": "2024-01-25 13:00:00+00:00"

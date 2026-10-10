@@ -27,6 +27,12 @@ def _deep(arch: str, weather: bool, **kw) -> Callable[[], Forecaster]:
     return make
 
 
+def _lgbm_weather() -> Forecaster:
+    m = LightGBMForecaster(W, "lightgbm_weather", quantile_horizons=config.HEADLINE_HORIZONS)
+    m.regimes = ("forecast", "forecast_raw", "oracle")  # also score the uncorrected NWP inputs as an ablation
+    return m
+
+
 def classical() -> dict[str, Callable[[], Forecaster]]:
     return {
         "persistence": Persistence,
@@ -39,16 +45,16 @@ def classical() -> dict[str, Callable[[], Forecaster]]:
         "ridge": lambda: RidgeForecaster(N, "ridge"),
         "ridge_weather": lambda: RidgeForecaster(W, "ridge_weather"),
         "lightgbm": lambda: LightGBMForecaster(N, "lightgbm", quantile_horizons=config.HEADLINE_HORIZONS),
-        "lightgbm_weather": lambda: LightGBMForecaster(W, "lightgbm_weather", quantile_horizons=config.HEADLINE_HORIZONS),
+        "lightgbm_weather": _lgbm_weather,
     }
 
 
 def deep() -> dict[str, Callable[[], Forecaster]]:
     return {
-        "gru": _deep("gru", False),
-        "gru_weather": _deep("gru", True),
-        "tcn_weather": _deep("tcn", True, hidden=64, layers=6),
+        "nbeats": _deep("nbeats", False, hidden=256, layers=4),
         "nbeats_weather": _deep("nbeats", True, hidden=256, layers=4),
+        "tcn_weather": _deep("tcn", True, hidden=64, layers=6),
+        "gru_weather": _deep("gru", True, hidden=96, layers=2),
     }
 
 

@@ -10,7 +10,9 @@ Availability rules enforced here:
 * calendar          : deterministic, taken at the target time.
 * weather, "oracle" : reanalysis at the target time (NOT operational).
 * weather, "forecast": archived NWP forecast for the target time, taken from a
-                      lead bucket that was already published at t.
+                      lead bucket that was already published at t, with a
+                      causal bias correction (see data.weather.debias_nwp).
+* weather, "forecast_raw": the same forecast without the correction (ablation).
 * weather, "none"   : no weather columns at all.
 * observed weather at or before t is treated as known in both weather regimes.
 
@@ -35,7 +37,7 @@ ORIGIN_LAGS = [0, 1, 2, 3, 6, 12, 23, 24, 25, 47, 48, 71, 72, 167, 168, 169, 335
 
 @dataclass(frozen=True)
 class FeatureSpec:
-    regime: str = "none"  # none | forecast | oracle
+    regime: str = "none"  # none | forecast | forecast_raw | oracle
     lags: bool = True
     calendar: bool = True
     holidays: bool = True
@@ -60,9 +62,10 @@ def target_weather(df: pd.DataFrame, h: int, regime: str) -> pd.DataFrame:
     """Weather series, indexed by valid time, that horizon h may use for its target."""
     if regime == "oracle":
         cols = {"temp": "temp", "rh": "rh", "wind": "wind", "tmin": "tmin", "tmax": "tmax"}
-    elif regime == "forecast":
+    elif regime in ("forecast", "forecast_raw"):
         d = config.forecast_lead_day(h)
-        cols = {k: f"{k}_d{d}" for k in ("temp", "rh", "wind", "tmin", "tmax")}
+        tag = "c" if regime == "forecast" else "d"  # bias-corrected vs raw archived NWP
+        cols = {k: f"{k}_{tag}{d}" for k in ("temp", "rh", "wind", "tmin", "tmax")}
     else:
         raise ValueError(regime)
     return df[list(cols.values())].rename(columns={v: k for k, v in cols.items()})

@@ -69,7 +69,7 @@ def build(experiment: str = "benchmark") -> dict[str, pd.DataFrame]:
     op = s[s["regime"].isin(OPERATIONAL)]
     fam = families(experiment)
     boots = []
-    for h, g in op.groupby("h"):
+    for _h, g in op.groupby("h"):
         cand = g[g["model"].map(fam).isin(["statistical", "ml"])]
         best = cand.assign(ae=(cand.y - cand.yhat).abs()).groupby("model")["ae"].mean().idxmin()
         b = backtest.paired_bootstrap(g.assign(regime="operational"), best)

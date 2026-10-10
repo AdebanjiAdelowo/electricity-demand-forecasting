@@ -149,3 +149,34 @@ def aggregate_points(points: pd.DataFrame) -> pd.DataFrame:
                 out[var.replace("temp", "tmax", 1)] = np.where(all_nan, np.nan, np.nanmax(np.where(ok, block, -np.inf), axis=1))
     agg = pd.DataFrame(out, index=points.index)
     return _to_hour_ending_mean(agg)
+
+
+NWP_VARS = ("temp", "rh", "wind", "tmin", "tmax")
+
+
+def debias_nwp(df: pd.DataFrame, days: int = 28, min_days: int = 7) -> pd.DataFrame:
+    """Causal bias correction of archived NWP forecasts against the observation proxy.
+
+    The archived GFS product is systematically offset from the ERA5-based
+    series the models are trained on (about +1.4 C and -10 points of relative
+    humidity from lead day 2 onward). For each variable, lead day d and UTC hour
+    of day, the correction at valid time t is the mean forecast-minus-observed
+    difference over the `days` most recent days ending d days before t. Those
+    observations precede every origin that is allowed to use lead d, so the
+    corrected value `<var>_c<d>` is available in real time. Until `min_days`
+    of pairs exist the raw forecast is passed through.
+    """
+    out = {}
+    hour = df.index.hour
+    for v in NWP_VARS:
+        for d in config.FORECAST_LEAD_DAYS:
+            raw = df[f"{v}_d{d}"]
+            err = raw - df[v]
+            bias = err.groupby(hour).transform(lambda s, d=d: s.rolling(days, min_periods=min_days).mean().shift(d))
+            c = raw - bias.fillna(0.0)
+            if v == "rh":
+                c = c.clip(0, 100)
+            if v == "wind":
+                c = c.clip(lower=0)
+            out[f"{v}_c{d}"] = c
+    return pd.DataFrame(out, index=df.index)

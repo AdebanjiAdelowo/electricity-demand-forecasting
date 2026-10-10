@@ -45,7 +45,7 @@ def test_forecast_regime_uses_published_lead_bucket(frame):
         assert d * 24 >= min(h + config.NWP_PUBLICATION_DELAY_H, 7 * 24)
         X, _, _ = make_features(frame, h, FeatureSpec(regime="forecast"))
         origin = frame.index[6000]
-        assert X.loc[origin, "w_temp"] == pytest.approx(frame[f"temp_d{d}"].loc[origin + pd.Timedelta(hours=h)])
+        assert X.loc[origin, "w_temp"] == pytest.approx(frame[f"temp_c{d}"].loc[origin + pd.Timedelta(hours=h)])
 
 
 def test_target_alignment(frame):
@@ -79,3 +79,20 @@ def test_calendar_handles_dst_and_hour_ending_labels():
     # the hour ending at local midnight belongs to the previous day
     cal = calendar_frame(pd.DatetimeIndex(["2024-07-05 05:00"], tz="UTC"))  # 00:00 CDT on 5 July
     assert cal["hour"].iloc[0] == 23 and cal["is_holiday"].iloc[0] == 1
+
+
+def test_nwp_bias_correction_is_causal_and_removes_offset(frame):
+    from gridcast.data.weather import debias_nwp
+
+    df = frame.copy()
+    for d in config.FORECAST_LEAD_DAYS:
+        df[f"temp_d{d}"] = df["temp"] + 2.0  # constant warm bias
+    c = debias_nwp(df)
+    assert (c["temp_c2"].iloc[24 * 40:] - df["temp"].iloc[24 * 40:]).abs().max() < 1e-9
+    # a forecast for valid time t with lead d may only use observations up to t - 24 d
+    d, pos = 2, 24 * 100
+    t = df.index[pos]
+    tampered = df.copy()
+    tampered.loc[tampered.index > t - pd.Timedelta(hours=24 * d), "temp"] += 30.0
+    c2 = debias_nwp(tampered)
+    assert c2[f"temp_c{d}"].loc[t] == pytest.approx(c[f"temp_c{d}"].loc[t])

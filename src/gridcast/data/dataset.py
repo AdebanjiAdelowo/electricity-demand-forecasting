@@ -28,6 +28,7 @@ def build(download: bool = True) -> pd.DataFrame:
     nwp = weather.aggregate_points(pd.read_parquet(config.DATA_RAW / "weather_nwp_points.parquet"))
     out = df.join(rea, how="left").join(nwp, how="left")
     out = out.drop(columns=["net_generation", "total_interchange"])
+    out = out.join(weather.debias_nwp(out))
     out.to_parquet(PROCESSED)
 
     eia_meta_path = (config.DATA_RAW / eia.RAW_NAME).with_suffix(".meta.json")
@@ -43,6 +44,7 @@ def build(download: bool = True) -> pd.DataFrame:
         "eia_source": json.loads(eia_meta_path.read_text()) if eia_meta_path.exists() else {"url": config.EIA_URL},
         "weather_points": {k: {"lat": v[0], "lon": v[1], "weight": v[2]} for k, v in config.WEATHER_POINTS.items()},
         "nwp_model": config.NWP_MODEL,
+        "nwp_columns": "<var>_d<k>: raw forecast issued k days before valid time; <var>_c<k>: causally bias-corrected",
         "nwp_first_valid": {c: str(out[c].first_valid_index()) for c in ("temp_d1", "temp_d7")},
         "weather_missing_fraction": {c: float(out[c].isna().mean()) for c in ("temp", "rh", "wind")},
         "quality": report.to_dict(),
