@@ -56,8 +56,13 @@ def ablation() -> pd.DataFrame:
     with tracking.Run("study_ablation", {"variants": list(ABLATIONS)}, config.TEST_FOLDS) as run:
         for name, spec in ABLATIONS.items():
             print(f"[ablation] {name}", flush=True)
-            pred, _ = backtest.run_backtest(lambda s=spec: LightGBMForecaster(s, "lgbm", quantiles=False), df,
-                                            config.TEST_FOLDS, H, verbose=False)
+            pred, _ = backtest.run_backtest(
+                lambda s=spec: LightGBMForecaster(s, "lgbm", quantiles=False),
+                df,
+                config.TEST_FOLDS,
+                H,
+                verbose=False,
+            )
             t = _score(pred, df, ["regime", "h"])
             t.insert(0, "variant", name)
             rows.append(t)
@@ -79,7 +84,7 @@ def _mask_series(df: pd.DataFrame, start, end, rate: float, block: int, seed: in
         n_blocks = int(round(rate * len(idx) / block))
         starts = rng.choice(idx[:-block], size=n_blocks, replace=False)
         for s in starts:
-            bad[s:s + block] = True
+            bad[s : s + block] = True
     out = df.copy()
     out["demand"] = quality.causal_seasonal_fill(df["demand"], pd.Series(bad, index=df.index))
     out["input_missing"] = bad
@@ -101,8 +106,11 @@ def robustness(seed: int = 0) -> pd.DataFrame:
         "lightgbm_weather": lambda: LightGBMForecaster(FULL, "lightgbm_weather", quantiles=False),
         "nbeats_weather": zoo.deep()["nbeats_weather"],
     }
-    scenarios = [("none", 0.0, 1)] + [("isolated hours", r, 1) for r in (0.01, 0.05, 0.20)] + \
-                [("24 h outages", r, 24) for r in (0.05, 0.20)]
+    scenarios = (
+        [("none", 0.0, 1)]
+        + [("isolated hours", r, 1) for r in (0.01, 0.05, 0.20)]
+        + [("24 h outages", r, 24) for r in (0.05, 0.20)]
+    )
     truth = target_frame(df, H)
     origins = fold_origins(df, fold)
     origins = origins[origins >= fold.test_start]
@@ -122,8 +130,16 @@ def robustness(seed: int = 0) -> pd.DataFrame:
                 p = m.predict(dirty, origins, H, regime).merge(truth, on=["origin", "h"])
                 p = p[~p.target_imputed & p.y.notna()]
                 for h, g in p.groupby("h"):
-                    rows.append({"model": name, "pattern": pattern, "missing_rate": rate, "h": h,
-                                 "mae": float((g.y - g.yhat).abs().mean()), "n": len(g)})
+                    rows.append(
+                        {
+                            "model": name,
+                            "pattern": pattern,
+                            "missing_rate": rate,
+                            "h": h,
+                            "mae": float((g.y - g.yhat).abs().mean()),
+                            "n": len(g),
+                        }
+                    )
         out = pd.DataFrame(rows)
         base = out[out.pattern == "none"].set_index(["model", "h"])["mae"]
         out["mae_increase_pct"] = [100 * (r.mae / base[(r.model, r.h)] - 1) for r in out.itertuples()]
@@ -141,8 +157,14 @@ def _deep_study(name: str, variants: dict[str, dict], arch: str = "nbeats") -> p
     with tracking.Run(f"study_{name}", {"variants": variants, "arch": arch}, [fold]) as run:
         for label, kw in variants.items():
             cfg = TrainConfig(arch=arch, weather=True, **kw)
-            pred, timing = backtest.run_backtest(lambda c=cfg, n=f"{arch}_{label}": DeepForecaster(c, n), df, [fold],
-                                                 config.DENSE_HORIZONS, regimes=["oracle"], verbose=True)
+            pred, timing = backtest.run_backtest(
+                lambda c=cfg, n=f"{arch}_{label}": DeepForecaster(c, n),
+                df,
+                [fold],
+                config.DENSE_HORIZONS,
+                regimes=["oracle"],
+                verbose=True,
+            )
             t = _score(pred[pred.h.isin(H)], df, ["h"])
             t.insert(0, "variant", label)
             t["arch"] = arch
@@ -156,20 +178,37 @@ def _deep_study(name: str, variants: dict[str, dict], arch: str = "nbeats") -> p
     return pd.concat(rows, ignore_index=True)
 
 
-def lookback() -> pd.DataFrame:
-    return _deep_study("lookback", {f"{L} h": {"lookback": L} for L in (24, 72, 168, 336)})
+SIZES = {
+    "nbeats": {f"width {w}": {"hidden": w, "layers": 4} for w in (32, 64, 128, 256, 512)},
+    "gru": {f"hidden {w}": {"hidden": w, "layers": 2} for w in (32, 64, 128, 256)},
+    "tcn": {f"channels {w}": {"hidden": w, "layers": 6} for w in (32, 64, 128)},
+}
 
 
-def size() -> pd.DataFrame:
-    return _deep_study("size", {f"width {w}": {"hidden": w, "layers": 4} for w in (32, 64, 128, 256, 512)})
+def lookback(arch: str = "nbeats") -> pd.DataFrame:
+    name = "lookback" if arch == "nbeats" else f"lookback_{arch}"
+    return _deep_study(name, {f"{L} h": {"lookback": L} for L in (24, 72, 168, 336)}, arch)
+
+
+def size(arch: str = "nbeats") -> pd.DataFrame:
+    name = "size" if arch == "nbeats" else f"size_{arch}"
+    return _deep_study(name, SIZES[arch], arch)
+
+
+def seeds(arch: str = "nbeats", n: int = 5) -> pd.DataFrame:
+    """Seed-to-seed variation of one architecture (dev fold)."""
+    return _deep_study(f"seeds_{arch}", {f"seed {i}": {"seed": i} for i in range(n)}, arch)
 
 
 def stress() -> pd.DataFrame:
     """Winter Storm Uri: train on data through late 2020, forecast January to March 2021."""
     df = dataset.load()
     fold = config.URI_FOLD
-    models = {k: v for k, v in zoo.classical().items() if k in
-              ("seasonal_naive_week", "dshw", "ridge", "ridge_weather", "lightgbm", "lightgbm_weather")}
+    models = {
+        k: v
+        for k, v in zoo.classical().items()
+        if k in ("seasonal_naive_week", "dshw", "ridge", "ridge_weather", "lightgbm", "lightgbm_weather")
+    }
     models["lightgbm"] = lambda: LightGBMForecaster(zoo.N, "lightgbm", quantile_horizons=H)
     models["lightgbm_weather"] = lambda: LightGBMForecaster(zoo.W, "lightgbm_weather", quantile_horizons=H)
     models["nbeats_weather"] = zoo.deep()["nbeats_weather"]
@@ -186,7 +225,9 @@ def stress() -> pd.DataFrame:
             s = backtest.scoreable(pred)
             for label, (a, b) in windows.items():
                 tt = s["target_time"]
-                g = s[(tt >= pd.Timestamp(a, tz=config.LOCAL_TZ)) & (tt < pd.Timestamp(b, tz=config.LOCAL_TZ))]
+                g = s[
+                    (tt >= pd.Timestamp(a, tz=config.LOCAL_TZ)) & (tt < pd.Timestamp(b, tz=config.LOCAL_TZ))
+                ]
                 t = metrics.score_frame(g, None, ["model", "regime", "h"])
                 t.insert(0, "window", label)
                 rows.append(t)
@@ -196,14 +237,24 @@ def stress() -> pd.DataFrame:
     return out
 
 
-STUDIES = {"ablation": ablation, "robustness": robustness, "lookback": lookback, "size": size, "stress": stress}
+STUDIES = {
+    "ablation": ablation,
+    "robustness": robustness,
+    "lookback": lookback,
+    "size": size,
+    "seeds": seeds,
+    "stress": stress,
+}
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("study", choices=list(STUDIES))
+    ap.add_argument(
+        "--arch", choices=list(SIZES), default="nbeats", help="architecture for lookback / size / seeds"
+    )
     a = ap.parse_args(argv)
-    out = STUDIES[a.study]()
+    out = STUDIES[a.study](a.arch) if a.study in ("lookback", "size", "seeds") else STUDIES[a.study]()
     pd.set_option("display.width", 220, "display.max_rows", 200)
     idx = [c for c in ("window", "variant", "model", "pattern", "missing_rate", "regime") if c in out.columns]
     print(out.pivot_table(index=idx, columns="h", values="mae", sort=False).round(0))

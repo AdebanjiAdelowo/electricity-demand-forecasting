@@ -15,3 +15,10 @@ results/forecasting_baselines/
 results/physics_informed_synthetic_energy/
 results/weather_uncertainty/
 results/neural_benchmarks/
+results/predictions/
+results/tables/
+results/runs/
+results/figures/
+results/serving/
+results/prediction_exports/*
+!results/prediction_exports/20261012T163902Z/
