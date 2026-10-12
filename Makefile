@@ -12,7 +12,7 @@ test:
 	GRIDCAST_JOBS=2 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 $(PY) -m pytest tests/test_deep.py
 
 lint:
-	uv run ruff check src app tests experiments
+	uv run ruff check src app tests experiments scripts
 
 baselines:        ## statistical and machine-learning models, CPU only
 	$(PY) -m gridcast.cli benchmark --group classical

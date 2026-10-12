@@ -13,3 +13,5 @@ dist/
 results/logs/
 results/forecasting_baselines/
 results/physics_informed_synthetic_energy/
+results/weather_uncertainty/
+results/neural_benchmarks/

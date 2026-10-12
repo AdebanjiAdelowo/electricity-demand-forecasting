@@ -14,7 +14,7 @@ jobs:
       - name: Install (CPU wheels, locked)
         run: uv sync --locked --extra deep --extra serve --extra copilot --extra dev --extra physics
       - name: Lint
-        run: uv run ruff check src app tests experiments
+        run: uv run ruff check src app tests experiments scripts
       - name: Tests (synthetic data, no network, no GPU)
         env:
           GRIDCAST_JOBS: "2"

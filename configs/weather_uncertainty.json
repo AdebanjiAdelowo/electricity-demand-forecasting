@@ -1,0 +1,15 @@
+{
+  "baseline_directory": "results/forecasting_baselines/20261012T093203Z",
+  "seed": 0,
+  "weather_modes": ["history_proxy", "oracle"],
+  "weather_variables": ["temp", "rh", "wind"],
+  "observation_delay_hours": 1,
+  "weather_lags": [0, 1, 24],
+  "weather_rolling_hours": [24, 72],
+  "fill_limit_hours": 3,
+  "calibration_window": 1440,
+  "calibration_min_scores": 168,
+  "feedback_delay_hours": 0,
+  "adaptive_gamma": 0.01,
+  "calibration_models": ["ridge", "lightgbm"]
+}

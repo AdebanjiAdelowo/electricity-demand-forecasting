@@ -32,6 +32,19 @@ splits, fingerprints, metric definitions, uncertainty intervals and seasonal
 error slices. Static conformal intervals undercovered at longer horizons;
 nominal coverage is not guaranteed for changing, dependent demand.
 
+The [weather and uncertainty study](docs/WEATHER_UNCERTAINTY_REPORT.md) adds
+explicit forecast-publication gating, labelled historical/oracle weather
+controls, residual-drift diagnostics and timestamp-aware online calibration.
+At 168 hours, rolling calibration raised Ridge's measured 90% coverage from
+82.81% to 88.62% with wider intervals. The adaptive variant performed worse
+at long horizons. The validated no-weather point benchmark remains primary.
+
+```sh
+PYTHONPATH=src GRIDCAST_JOBS=2 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 \
+  MPLCONFIGDIR=results/scratch/matplotlib \
+  .venv/bin/python -m gridcast.experiments.weather_uncertainty
+```
+
 ## Synthetic energy experiment
 
 The [five-bus experiment](experiments/physics_informed_synthetic_energy)
