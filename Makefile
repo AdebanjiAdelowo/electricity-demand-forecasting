@@ -8,10 +8,11 @@ data:             ## download EIA-930 and Open-Meteo data, build the processed d
 	$(PY) -m gridcast.cli data
 
 test:
-	$(PY) -m pytest
+	GRIDCAST_JOBS=2 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 $(PY) -m pytest --ignore=tests/test_deep.py
+	GRIDCAST_JOBS=2 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 $(PY) -m pytest tests/test_deep.py
 
 lint:
-	uv run ruff check src app tests kaggle
+	uv run ruff check src app tests experiments
 
 baselines:        ## statistical and machine-learning models, CPU only
 	$(PY) -m gridcast.cli benchmark --group classical

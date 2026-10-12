@@ -1,0 +1,12 @@
+{
+  "train_trajectories": 128,
+  "heldout_trajectories": 64,
+  "generated_trajectories": 128,
+  "hours": 24,
+  "pca_rank": 12,
+  "train_seed": 100,
+  "heldout_seed": 200,
+  "sampling_seeds": [0, 1, 2],
+  "projection_steps": 18,
+  "independent_solver_points": 64
+}

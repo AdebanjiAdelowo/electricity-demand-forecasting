@@ -11,3 +11,5 @@ results/scratch/
 .env
 dist/
 results/logs/
+results/forecasting_baselines/
+results/physics_informed_synthetic_energy/

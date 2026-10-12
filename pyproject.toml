@@ -31,6 +31,9 @@ foundation = ["chronos-forecasting>=1.5"]
 serve = ["fastapi>=0.110", "uvicorn>=0.29", "streamlit>=1.33", "httpx>=0.27"]
 copilot = ["anthropic>=0.40"]
 dev = ["pytest>=8", "ruff>=0.4"]
+physics = [
+    "pandapower>=3.2,<4",
+]
 
 [project.scripts]
 gridcast = "gridcast.cli:main"
@@ -48,5 +51,6 @@ ignore = ["E501", "B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 addopts = "-q"
 markers = ["slow: needs the processed dataset or torch"]

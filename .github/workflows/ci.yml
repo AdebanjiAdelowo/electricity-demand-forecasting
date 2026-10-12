@@ -12,10 +12,16 @@ jobs:
         with:
           enable-cache: true
       - name: Install (CPU wheels, locked)
-        run: uv sync --locked --extra deep --extra serve --extra copilot --extra dev
+        run: uv sync --locked --extra deep --extra serve --extra copilot --extra dev --extra physics
       - name: Lint
-        run: uv run ruff check src app tests kaggle
+        run: uv run ruff check src app tests experiments
       - name: Tests (synthetic data, no network, no GPU)
-        run: uv run pytest
+        env:
+          GRIDCAST_JOBS: "2"
+          OMP_NUM_THREADS: "2"
+          OPENBLAS_NUM_THREADS: "2"
+        run: |
+          uv run pytest --ignore=tests/test_deep.py
+          uv run pytest tests/test_deep.py
       - name: Result tables are internally consistent
         run: uv run python -m gridcast.experiments.check_results
