@@ -32,6 +32,24 @@ splits, fingerprints, metric definitions, uncertainty intervals and seasonal
 error slices. Static conformal intervals undercovered at longer horizons;
 nominal coverage is not guaranteed for changing, dependent demand.
 
+Saved row-level forecasts include issue time, target time and observed EIA
+demand. A [reviewed compact export](results/prediction_exports/20261012T163902Z/README.md)
+contains good, median-ranked and poor seven-day examples for Ridge and
+LightGBM at all four horizons. Its metric table independently reproduces
+MAE and RMSE for all five primary models before selecting examples. The
+examples are selected after evaluation and do not estimate average skill.
+
+```sh
+PYTHONPATH=src MPLCONFIGDIR=results/scratch/matplotlib \
+  .venv/bin/python -m gridcast.experiments.export_predictions
+```
+
+Re-export requires the original local prediction directory recorded in the
+manifest; no model is retrained. Full archives remain outside Git. The compact
+CSVs can be read directly from a fresh checkout. The
+[next-experiment plan](docs/NEXT_EXPERIMENTS.md) specifies pending classical,
+tuning, weather-availability, interval-calibration and neural comparisons.
+
 The [weather and uncertainty study](docs/WEATHER_UNCERTAINTY_REPORT.md) adds
 explicit forecast-publication gating, labelled historical/oracle weather
 controls, residual-drift diagnostics and timestamp-aware online calibration.

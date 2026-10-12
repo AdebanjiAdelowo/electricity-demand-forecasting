@@ -1,0 +1,90 @@
+{
+  "source_run": "results/forecasting_baselines/20261012T093203Z",
+  "source_commit": {
+    "commit": "b1c92e37cbea546ca6bdd0eb8932f2c5cfd93795",
+    "dirty": true
+  },
+  "export_commit": {
+    "commit": "e40eec0d85d8acbbcef2f628abd538198e0c36da",
+    "dirty": true
+  },
+  "dataset_sha256": "1e3acfa6c4070d0dc69d6a2d854964f09afc42b3291221fda646c606249ca5ab",
+  "prediction_sha256": {
+    "lightgbm.parquet": "d4c2b0dbeb29d80526946f32b14b16a887e2b50f7e0203ce11e44c1d1f3ec0da",
+    "persistence.parquet": "2cfcc14c23b1388f299057f6d4ea5be6b7d02f76070a82198d8e98b81405b381",
+    "ridge.parquet": "c1cc44d33282c680444f7a1d53e6f2fe9e0eda00840b1e72ccf9fdf105c865f0",
+    "seasonal_naive_24h.parquet": "5e5cde3e214451a6aad237c3215197e6a231ffb02f87d878b29898eab9dbd5d5",
+    "seasonal_naive_week.parquet": "ba86b322f5ddb1c35e697a00ec593feb622ce1776fb18a690871c1f854c26bb6"
+  },
+  "models": [
+    "ridge",
+    "lightgbm"
+  ],
+  "horizons": [
+    1,
+    24,
+    48,
+    168
+  ],
+  "csv_row_counts": {
+    "good": 1344,
+    "typical": 1344,
+    "poor": 1344
+  },
+  "full_benchmark_metric_rows_verified": 20,
+  "units": "MW",
+  "signed_error": "predicted minus observed",
+  "selection": "Complete 168-hour blocks anchored at fold start plus maximum horizon; minimum, median-ranked and maximum Ridge 24h MAE. Post-hoc illustrations, not unbiased aggregate estimates.",
+  "files": {
+    "independently_reproduced_metrics.csv": {
+      "bytes": 1455,
+      "sha256": "f12fadbfc45c4171d9a432059c8a268048f98d80ed048c4ec0c334a73844f6fb"
+    },
+    "predictions_vs_actual_typical.csv": {
+      "bytes": 177479,
+      "sha256": "f20c261a3f839232b6c6759e8c14cffe1b0e381dd4e1f0b28dd9766ee5d4ff36"
+    },
+    "actual_vs_predicted_good.png": {
+      "bytes": 268800,
+      "sha256": "292d168e452c083a0800aa2a641ea00d671e52e52ced23e5dc98123ddba2ae34"
+    },
+    "actual_vs_predicted_good.svg": {
+      "bytes": 77435,
+      "sha256": "97bf26483b6e1107ce2839658bf4110e84d2be9d09a4e9e847465250e0642181"
+    },
+    "predictions_vs_actual_poor.csv": {
+      "bytes": 177310,
+      "sha256": "2dab7f93d6c21f0f7ad25abedfc83071a9c920aa6b24f734c838fd5b13d0f331"
+    },
+    "actual_vs_predicted_typical.svg": {
+      "bytes": 76315,
+      "sha256": "97768073becc23dc879263af5378d14dc6e0565b536116ffde40fa3b608e54eb"
+    },
+    "actual_vs_predicted_poor.png": {
+      "bytes": 202722,
+      "sha256": "6453a1db66da409c6f5fc55e443f48420546385d86085b54b777a4df1fbedc14"
+    },
+    "selected_periods.csv": {
+      "bytes": 370,
+      "sha256": "b66c307090599ca684aff9f2affcc510ec277079ec8acc1ce646513414b4d43a"
+    },
+    "actual_vs_predicted_poor.svg": {
+      "bytes": 73815,
+      "sha256": "f2d7bb3ffd32322ac4a8ae25299a1e0f09ac391c7679f319aedab44263937b63"
+    },
+    "actual_vs_predicted_typical.png": {
+      "bytes": 256494,
+      "sha256": "4e76fbfecd65251420ffaadaca31618897adfb3df1715d75f9a676a5722520f1"
+    },
+    "predictions_vs_actual_good.csv": {
+      "bytes": 177616,
+      "sha256": "6accc0b1df316b1309c1ecc3be26c86145d033e92b42c75cdb3514314950bb7d"
+    },
+    "executed_export_script.py": {
+      "bytes": 11852,
+      "sha256": "f14146cc9eae7afa314585462145224a95b24dc3511f0482b861ee6b7b541dfb"
+    }
+  },
+  "reviewed_export_script_sha256": "f14146cc9eae7afa314585462145224a95b24dc3511f0482b861ee6b7b541dfb",
+  "provenance_note": "The archived executed_export_script.py matches the execution hash. During review only SVG trailing whitespace was normalized; path tokens, PNGs, CSVs and numerical results were unchanged."
+}
