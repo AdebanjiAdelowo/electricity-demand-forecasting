@@ -129,12 +129,14 @@ def ensure_dirs() -> None:
 
 
 def forecast_lead_day(h: int) -> int:
-    """NWP lead bucket (days) that is guaranteed to be published at the origin.
+    """Legacy NWP lead bucket under an unverified publication-delay assumption.
 
     Open-Meteo `previous_dayN` holds the value predicted N*24 h before valid
     time. A run needs roughly NWP_PUBLICATION_DELAY_H hours to be published, so
     for horizon h we need N*24 >= h + delay. The archive stops at day 7, so the
-    168 h horizon uses day 7 (documented approximation).
+    168 h horizon uses day 7 (documented approximation, not delay-safe).
+    This function cannot establish issue-time availability. Strict experiments
+    use features.available_weather with explicit issue/available timestamps.
     """
     n = -(-(h + NWP_PUBLICATION_DELAY_H) // 24)
     return int(min(max(n, 1), max(FORECAST_LEAD_DAYS)))

@@ -9,9 +9,9 @@ Availability rules enforced here:
 * demand            : only values at or before t (non-negative shifts).
 * calendar          : deterministic, taken at the target time.
 * weather, "oracle" : reanalysis at the target time (NOT operational).
-* weather, "forecast": archived NWP forecast for the target time, taken from a
-                      lead bucket that was already published at t, with a
-                      causal bias correction (see data.weather.debias_nwp).
+* weather, "forecast": legacy archived NWP lead bucket with an assumed release
+                      delay; operational availability is unverified. New strict
+                      paths live in features.available_weather.
 * weather, "forecast_raw": the same forecast without the correction (ablation).
 * weather, "none"   : no weather columns at all.
 * observed weather at or before t is treated as known in both weather regimes.

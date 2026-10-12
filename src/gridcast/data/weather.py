@@ -6,7 +6,8 @@ Two distinct products are downloaded and never mixed silently:
                 Using it at the target time is an oracle experiment.
 * nwp forecast: archived GFS forecasts from the Previous Runs API, indexed by
                 valid time and lead bucket (1..7 days before valid time). This
-                is what a forecaster could actually have had.
+                is a retrospective forecast product; issue/publication times
+                are not retained and operational availability is unverified.
 
 All series are aggregated over fixed load-centre points with fixed weights and
 converted from instantaneous values at hour marks to hour-ending interval
@@ -163,7 +164,8 @@ def debias_nwp(df: pd.DataFrame, days: int = 28, min_days: int = 7) -> pd.DataFr
     of day, the correction at valid time t is the mean forecast-minus-observed
     difference over the `days` most recent days ending d days before t. Those
     observations precede every origin that is allowed to use lead d, so the
-    corrected value `<var>_c<d>` is available in real time. Until `min_days`
+    corrected value `<var>_c<d>` is causal under the legacy lead-delay assumption,
+    not proof of real-time publication availability. Until `min_days`
     of pairs exist the raw forecast is passed through.
     """
     out = {}
