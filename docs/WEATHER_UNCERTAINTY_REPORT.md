@@ -278,3 +278,13 @@ Kaggle upload, GPU run or N-HiTS implementation claim. Useful next steps are
 verified forecast-run availability, validation-only calibration tuning,
 longer bootstrap blocks, independent replications, and fresh statistical or
 neural comparisons after compute approval.
+
+## Subsequent validation-only calibration study
+
+Priority 1 was subsequently executed using a new, disjoint pre-April-2024
+development split. The [interval validation report](INTERVAL_VALIDATION_REPORT.md)
+records frozen model/horizon windows, all 80/90/95% test metrics, seasonal
+failures, interval availability and resource provenance. No 168-hour candidate
+qualified on development data; the frozen policy retained static intervals.
+The results in this report above remain unchanged. The later four-fold
+comparison is exploratory because those test folds had already been inspected.

@@ -1,6 +1,8 @@
 # GridCast: controlled next-stage experiment plan
 
-All experiments below are **PENDING**, not newly executed results. No GPU,
+Priority 1 is **COMPLETED**, with development coverage failures and limited
+exploratory benefits documented in [the interval validation report](INTERVAL_VALIDATION_REPORT.md).
+Priorities 2–5 remain **PENDING**. No GPU,
 cloud job, paid API call or archive download was launched while preparing this
 plan. Runtime/storage estimates are planning ranges, not measurements.
 
@@ -223,8 +225,10 @@ explicit execution plus an already prepared project environment.
 
 ## Approval boundaries
 
-Only code review, tests, row-level export, metric reproduction and this plan
-were completed in the synchronization task. No proposed training experiment
+The synchronization task completed code review, tests, row-level export and
+metric reproduction. Priority 1 subsequently completed short CPU development
+fits and interval evaluation, with explicit approval for a 2 GiB evaluation
+cap after the initial 1 GiB failure. No other proposed training experiment
 or acquisition was started. Approval is required before long shared-machine
 training, GPU/MPS jobs, remote execution, large downloads, paid APIs or cloud
 changes. Preserve all prior evidence and record every revised protocol as a

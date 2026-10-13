@@ -1,0 +1,56 @@
+{
+  "pilot": false,
+  "policies": [
+    {
+      "model": "lightgbm",
+      "h": 1,
+      "days": 7,
+      "status": "selected"
+    },
+    {
+      "model": "lightgbm",
+      "h": 24,
+      "days": 14,
+      "status": "selected"
+    },
+    {
+      "model": "lightgbm",
+      "h": 48,
+      "days": 28,
+      "status": "selected"
+    },
+    {
+      "model": "lightgbm",
+      "h": 168,
+      "days": null,
+      "status": "no_candidate_qualified"
+    },
+    {
+      "model": "ridge",
+      "h": 1,
+      "days": 7,
+      "status": "selected"
+    },
+    {
+      "model": "ridge",
+      "h": 24,
+      "days": 7,
+      "status": "selected"
+    },
+    {
+      "model": "ridge",
+      "h": 48,
+      "days": 14,
+      "status": "selected"
+    },
+    {
+      "model": "ridge",
+      "h": 168,
+      "days": null,
+      "status": "no_candidate_qualified"
+    }
+  ],
+  "protocol_sha256": "41caafce6aca61cc1eb088198679bec38d2aa9e6b65498cba06e11a262ee4f7a",
+  "development_predictions_sha256": "7c02ee90dedf1bdf22283f41c47d04c5f59b34aeecf1039c39c195170bf32e4b",
+  "frozen_at_utc": "2026-10-13 07:57:35.485933+00:00"
+}

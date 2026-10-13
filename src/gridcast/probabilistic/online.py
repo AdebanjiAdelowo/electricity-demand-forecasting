@@ -4,6 +4,7 @@ No row-count shift is used. Actual feedback is admitted at target_time plus
 an explicit observation delay. ACI is a bounded delayed-feedback variant;
 the original paper's guarantees are not asserted for this implementation.
 """
+
 from __future__ import annotations
 
 from bisect import bisect_left, insort
@@ -27,20 +28,30 @@ class OnlineConfig:
     gamma: float = 0.01
     alpha_min: float = 0.001
     alpha_max: float = 0.5
+    window_hours: int | None = None  # optional elapsed feedback-time window
 
     def __post_init__(self):
         if self.mode not in {"rolling", "adaptive"}:
             raise ValueError("Unknown online calibration mode")
-        if not isinstance(self.window, int) or not isinstance(self.min_scores, int) or not 1 <= self.min_scores <= self.window:
+        if (
+            not isinstance(self.window, int)
+            or not isinstance(self.min_scores, int)
+            or not 1 <= self.min_scores <= self.window
+        ):
             raise ValueError("Invalid calibration window/minimum")
         if not isinstance(self.feedback_delay_hours, int) or self.feedback_delay_hours < 0:
             raise ValueError("Feedback delay must be nonnegative integer hours")
+        if self.window_hours is not None and (
+            not isinstance(self.window_hours, int) or self.window_hours < 1
+        ):
+            raise ValueError("Elapsed window must be positive integer hours")
         if not 0 < self.gamma < 1 or not 0 < self.alpha_min < self.alpha_max < 1:
             raise ValueError("Invalid adaptive settings")
 
 
-def calibrate_online(pred: pd.DataFrame, settings: OnlineConfig,
-                     alphas: tuple[float, ...] = tuple(config.INTERVAL_ALPHAS)) -> pd.DataFrame:
+def calibrate_online(
+    pred: pd.DataFrame, settings: OnlineConfig, alphas: tuple[float, ...] = tuple(config.INTERVAL_ALPHAS)
+) -> pd.DataFrame:
     if not alphas or len(set(alphas)) != len(alphas) or any(not 0 < a < 1 for a in alphas):
         raise ValueError("Invalid nominal miscoverage levels")
     required = {*KEYS, "origin", "target_time", "y", "yhat", "target_imputed", "block"}
@@ -70,9 +81,9 @@ def calibrate_online(pred: pd.DataFrame, settings: OnlineConfig,
                 j = int(pending[cursor])
                 cursor += 1
                 insort(sorted_scores, float(scores[j]))
-                pool.append(float(scores[j]))
+                pool.append((feedback[j], float(scores[j])))
                 if len(pool) > settings.window:
-                    old = pool.popleft()
+                    _, old = pool.popleft()
                     sorted_scores.pop(bisect_left(sorted_scores, old))
                 last_feedback = feedback[j]
                 if settings.mode == "adaptive" and g.block.iloc[j] == "test":
@@ -80,8 +91,18 @@ def calibrate_online(pred: pd.DataFrame, settings: OnlineConfig,
                         interval = bounds.pop((j, alpha), None)
                         if interval is not None:
                             miss = float(y[j] < interval[0] or y[j] > interval[1])
-                            effective[alpha] = float(np.clip(effective[alpha] + settings.gamma * (alpha - miss),
-                                                              settings.alpha_min, settings.alpha_max))
+                            effective[alpha] = float(
+                                np.clip(
+                                    effective[alpha] + settings.gamma * (alpha - miss),
+                                    settings.alpha_min,
+                                    settings.alpha_max,
+                                )
+                            )
+            if settings.window_hours is not None:
+                cutoff = origin - pd.Timedelta(hours=settings.window_hours)
+                while pool and pool[0][0] <= cutoff:
+                    _, old = pool.popleft()
+                    sorted_scores.pop(bisect_left(sorted_scores, old))
             if g.block.iloc[i] != "test":
                 continue
             n = len(sorted_scores)
@@ -94,9 +115,22 @@ def calibrate_online(pred: pd.DataFrame, settings: OnlineConfig,
                 lo, hi = f[i] - margin, f[i] + margin
                 if settings.mode == "adaptive" and valid[i] and np.isfinite(margin):
                     bounds[(i, alpha)] = (lo, hi)
-                rows.append({**dict(zip(KEYS, key, strict=True)), "origin": origin, "target_time": targets[i],
-                             "feedback_at": feedback[i], "y": y[i], "yhat": f[i],
-                             "target_imputed": bool(g.target_imputed.iloc[i]), "alpha": alpha,
-                             "effective_alpha": effective[alpha], "lo": lo, "hi": hi, "n_scores": n,
-                             "last_feedback_at": last_feedback, "method": f"conformal_{settings.mode}_timestamp"})
+                rows.append(
+                    {
+                        **dict(zip(KEYS, key, strict=True)),
+                        "origin": origin,
+                        "target_time": targets[i],
+                        "feedback_at": feedback[i],
+                        "y": y[i],
+                        "yhat": f[i],
+                        "target_imputed": bool(g.target_imputed.iloc[i]),
+                        "alpha": alpha,
+                        "effective_alpha": effective[alpha],
+                        "lo": lo,
+                        "hi": hi,
+                        "n_scores": n,
+                        "last_feedback_at": last_feedback,
+                        "method": f"conformal_{settings.mode}_timestamp",
+                    }
+                )
     return pd.DataFrame(rows)
