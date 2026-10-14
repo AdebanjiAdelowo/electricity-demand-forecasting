@@ -24,3 +24,5 @@ results/prediction_exports/*
 !results/prediction_exports/20261012T163902Z/
 
 results/interval_validation/
+
+results/fair_model_comparison/

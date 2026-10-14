@@ -2,7 +2,8 @@
 
 Priority 1 is **COMPLETED**, with development coverage failures and limited
 exploratory benefits documented in [the interval validation report](INTERVAL_VALIDATION_REPORT.md).
-Priorities 2–5 remain **PENDING**. No GPU,
+Priority 2 **PREPARATION IS COMPLETED**; historical tuning and primary evaluation
+are **NOT EXECUTED**. Priorities 3–5 remain **PENDING**. No GPU,
 cloud job, paid API call or archive download was launched while preparing this
 plan. Runtime/storage estimates are planning ranges, not measurements.
 
@@ -71,38 +72,36 @@ pilot. No GPU is needed. Any new long point-model fit requires approval.
 
 ## Priority 2: fair Ridge versus LightGBM tuning
 
-**Question:** Does LightGBM improve over a tuned linear model when information,
-folds, objective selection and evaluation keys are controlled?
+**Preparation completed; full experiment pending separate approval.**
+The reviewed [fair model comparison protocol](FAIR_MODEL_COMPARISON_PROTOCOL.md)
+and `configs/fair_model_comparison.json` supersede the provisional grid below
+this plan's earlier version. The framework provides a default dry run,
+synthetic smoke mode and separately authorized development/full execution.
+Only synthetic fixtures have been trained; no new historical search or
+primary-test model evaluation is claimed.
 
-**Dataset/features:** Same demand lags, calendar and trailing normalization
-for both; no future weather. One-hot encoding for Ridge versus explicit
-calendar categorical treatment in LightGBM changes representation, not the
-information available. Keep history-proxy and oracle arms separate.
+**Question/design:** Compare no-weather Ridge and LightGBM with the identical
+fixed feature matrix, fitting-only median imputation/scaling, chronological
+fitting and three July-2023–March-2024 validation blocks. Select per horizon
+by pooled validation MAE in MW, then freeze before exploratory primary refits.
+Keep the unchanged four test folds and imputed-target exclusions. The original
+normalized-MAE Ridge search versus fixed LightGBM, preprocessing and explicit
+calendar-representation differences are audited in the protocol.
 
-**Training:** Pre-register Ridge's existing five penalties. For LightGBM,
-use at most 12 candidates: leaves 15/31/63, L1 versus L2 point objective,
-regularization lambda 1/10, fixed learning rate 0.05 and maximum 600 trees.
-Early stopping and selection use only temporal validation with target-aware
-cutoffs. Start with one development fold, then freeze the selection policy
-and refit within each allowed fitting block. Evaluate point forecasts first;
-quantile models and conformal calibration follow as separately costed runs.
-Use seed 0 for the pilot and 0/1/2 only for the approved final replication.
+**Search:** Five original Ridge penalties; twelve predefined LightGBM
+candidates combining three leaf sizes, L1/L2 objectives and two bounded
+rate/iteration/minimum-child/regularization profiles. No early stopping or
+quantile training. Record completed fits, failed attempts, observations,
+wall time and peak memory separately. Equal information and a common
+per-model time cap do not establish equal model complexity or actual cost.
 
-**Leakage risks:** Test-set early stopping; preprocessing fitted on full data;
-normalization using future demand; unequal feature availability; choosing a
-favorable horizon after inspecting results. Do not call the current fixed
-L2 LightGBM versus validation-tuned Ridge comparison a balanced tuning budget.
-
-**Metrics/acceptance:** Shared point metrics and paired differences per
-horizon; compute/parameter counts and failure rates. A better model must meet
-predeclared development criteria and show useful test error/runtime tradeoffs.
-Retain negative or inconclusive comparisons. CPU reproducibility is required;
-the official [LightGBM parameter documentation](https://lightgbm.readthedocs.io/en/latest/Parameters.html)
-describes deterministic settings and their platform/version limits.
-
-**Compute:** Two CPU threads, pilot cap 30 minutes, approximately 0.5–2 GiB
-working memory. Final four-fold search may take tens of minutes to hours;
-request approval after pilot measurement. No dependency upgrade is assumed.
+**Validation/resources:** Synthetic smoke passed in 4.080 s, peak 413.19 MiB.
+Historical fits are projected at 10–45 minutes, 0.7–2 GiB, 50–300 MiB outputs,
+with assumptions/uncertainty stated in the protocol. The configured campaign
+ceiling is 60 minutes, each model search cap 30 minutes, CPU threads at most
+two, memory at most 2 GiB. Hitting a cap fails the campaign and requires
+approval to continue. No historical execution is authorized by preparation.
+Priorities 3–5 and their approval boundaries remain unchanged.
 
 ## Priority 3: classical SARIMAX and seasonal smoothing
 

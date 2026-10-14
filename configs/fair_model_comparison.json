@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "seed": 0,
+  "threads": 2,
+  "horizons": [1, 24, 48, 168],
+  "train_start": "2015-08-01T00:00:00Z",
+  "development_blocks": [
+    ["2023-07-01T00:00:00Z", "2023-10-01T00:00:00Z"],
+    ["2023-10-01T00:00:00Z", "2024-01-01T00:00:00Z"],
+    ["2024-01-01T00:00:00Z", "2024-04-01T00:00:00Z"]
+  ],
+  "ridge_alphas": [0.1, 1.0, 10.0, 100.0, 1000.0],
+  "lightgbm_objectives": ["l2", "l1"],
+  "lightgbm_leaves": [15, 31, 63],
+  "lightgbm_profiles": [
+    {"learning_rate": 0.05, "n_estimators": 600, "min_child_samples": 40, "reg_alpha": 0.0, "reg_lambda": 1.0},
+    {"learning_rate": 0.08, "n_estimators": 300, "min_child_samples": 80, "reg_alpha": 1.0, "reg_lambda": 10.0}
+  ],
+  "bootstrap_days": [7, 14, 28],
+  "bootstrap_replicates": 500,
+  "extreme_training_quantile": 0.95,
+  "feedback_delay_hours": 0,
+  "preparation_seconds": 300,
+  "campaign_seconds": 3600,
+  "model_search_seconds": 1800,
+  "memory_mib": 2048
+}
