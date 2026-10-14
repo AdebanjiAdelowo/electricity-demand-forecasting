@@ -201,7 +201,9 @@ def estimator(candidate, settings):
 
 
 def fit_predict(df, h, start, cutoff, tasks, candidate, settings, event_sink=None):
+    feature_started = time.perf_counter()
     x, y, m, imputed = prepare(df, h)
+    feature_seconds = time.perf_counter() - feature_started
     train = fitting_mask(x, y, m, imputed, h, start, cutoff)
     if not train.any() or x.loc[train].notna().sum().eq(0).any():
         raise ValueError("Empty fitting block or wholly missing feature")
@@ -233,6 +235,8 @@ def fit_predict(df, h, start, cutoff, tasks, candidate, settings, event_sink=Non
         raise ValueError("Incomplete finite prediction schedule")
     record = {
         "fit_seconds": fitting,
+        "feature_preparation_seconds": feature_seconds,
+        "n_features": len(x.columns),
         "predict_seconds": time.perf_counter() - t,
         "train_n": int(train.sum()),
         "latest_fit_target": str((x.index[train] + pd.Timedelta(hours=h)).max()),

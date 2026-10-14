@@ -73,6 +73,12 @@ pilot. No GPU is needed. Any new long point-model fit requires approval.
 ## Priority 2: fair Ridge versus LightGBM tuning
 
 **Preparation completed; full experiment pending separate approval.**
+The [real-data resource-pilot preflight](FAIR_MODEL_COMPARISON_RESOURCE_PILOT.md)
+is **BLOCKED** by host memory-pressure warning (dispatch level 2). No real-data
+pilot fit ran; full-run cost estimates remain unverified. A six-fit guarded
+pilot entry point is implemented, but the full tuning/evaluation remains
+unauthorized. Recheck pressure and complete measurements before any readiness
+claim.
 The reviewed [fair model comparison protocol](FAIR_MODEL_COMPARISON_PROTOCOL.md)
 and `configs/fair_model_comparison.json` supersede the provisional grid below
 this plan's earlier version. The framework provides a default dry run,
