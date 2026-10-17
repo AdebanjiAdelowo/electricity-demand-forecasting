@@ -79,6 +79,14 @@ pilot fit ran; full-run cost estimates remain unverified. A six-fit guarded
 pilot entry point is implemented, but the full tuning/evaluation remains
 unauthorized. Recheck pressure and complete measurements before any readiness
 claim.
+**Colab CPU preparation is completed; historical execution remains PENDING.**
+The [Colab guide](COLAB_FAIR_COMPARISON_GUIDE.md) and
+`notebooks/gridcast_fair_comparison_colab.ipynb` add a Linux resource-admission
+gate (`/proc/meminfo`, cgroup limit/usage, pressure stall, disk, CPU-only,
+two threads), committed dataset fingerprints, a supervising parent that kills
+the pilot at 2,048 MiB/330 s, run inspection and lightweight provenance export.
+The six fits, grid, cutoffs and caps are unchanged. No Colab session or
+real-data fit has run; the pilot still needs separate approval.
 The reviewed [fair model comparison protocol](FAIR_MODEL_COMPARISON_PROTOCOL.md)
 and `configs/fair_model_comparison.json` supersede the provisional grid below
 this plan's earlier version. The framework provides a default dry run,

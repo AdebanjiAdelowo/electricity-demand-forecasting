@@ -192,6 +192,18 @@ none were modified. The new preflight and test artifacts are separate and
 ignored. No dependency was installed/upgraded, data rebuilt or shared cache
 removed. No GPU/MPS, cloud, paid service, large download or deployment occurred.
 
+## Colab/Linux addendum (preparation only)
+
+A Linux execution path is now prepared; see the
+[Colab guide](COLAB_FAIR_COMPARISON_GUIDE.md). On Linux, `pressure()` returns a
+`/proc`/cgroup snapshot and `admit()` applies the fail-closed Linux rules in
+`gridcast.resources`. The macOS dispatch gate and its normal-only rule are
+unchanged, and other platforms remain blocked. The expected dataset hash now
+comes from the committed `configs/approved_dataset_snapshot.json`, which must
+agree with the local benchmark record when that file exists. `--output` lets a
+supervisor name the new (still non-existing) run directory. The scientific
+plan, candidates, cutoffs and caps are unchanged. No real-data fit has run.
+
 ## Next stages and approval
 
 First wait for verified **normal system pressure (1)**. Then resume the

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "dataset_version": "eia930-TEX+openmeteo@2026-10-10",
+  "processed_path": "data/processed/ercot_hourly.parquet",
+  "processed_sha256": "1e3acfa6c4070d0dc69d6a2d854964f09afc42b3291221fda646c606249ca5ab",
+  "manifest_path": "data/processed/manifest.json",
+  "manifest_sha256": "b881107165298776a96218f88ce60123340f049b960efcd03ebc8c555f1e34de",
+  "rows": 97914,
+  "index": "utc_end",
+  "index_type": "timestamp[us, tz=UTC]",
+  "start": "2015-07-01 06:00:00+00:00",
+  "end": "2026-08-31 23:00:00+00:00",
+  "required_columns": {"demand": "double", "is_imputed": "bool"},
+  "n_imputed": 72,
+  "eia_raw_sha256": "ff4f90c64f92a78910a18ee1824bf2ab7b05c7404b1bdab43a3db5cb6af34073",
+  "approved_by": "results/forecasting_baselines/20261012T093203Z/run.json (local benchmark record, ignored by Git)"
+}

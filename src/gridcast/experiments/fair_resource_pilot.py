@@ -16,8 +16,8 @@ import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
-from gridcast import config, tracking
-from gridcast.data import dataset
+from gridcast import config, resources, tracking
+from gridcast.data import dataset, snapshot
 from gridcast.evaluation.fair_comparison import KEY, validate_frame
 from gridcast.experiments import fair_model_comparison as fair
 from gridcast.experiments.revalidate import fingerprint
@@ -36,6 +36,8 @@ class PressureBlocked(RuntimeError):
 
 
 def pressure():
+    if platform.system() == "Linux":
+        return {"utc": str(pd.Timestamp.now(tz="UTC")), **resources.linux_snapshot(disk_path=config.RESULTS)}
     if platform.system() != "Darwin":
         raise PressureBlocked("No verified system-pressure admission gate on this platform")
     level = int(
@@ -51,7 +53,13 @@ def pressure():
     }
 
 
-def admit(record):
+def admit(record, threads=resources.MAX_THREADS):
+    if record.get("sensor") == "linux":
+        try:
+            resources.linux_admit(record, MEMORY_MIB, threads)
+        except resources.AdmissionBlocked as exc:
+            raise PressureBlocked(f"Linux resource admission blocked: {exc}") from exc
+        return
     if record["dispatch_pressure_level"] != 1:
         raise PressureBlocked(
             f"Memory pressure {record['meaning']} ({record['dispatch_pressure_level']}); no fit authorized under pressure"
@@ -139,16 +147,14 @@ def run(settings, execute=False, output=None, preflight_only=False):
     try:
         first = pressure()
         pressure_records.append(first)
-        admit(first)
+        admit(first, settings["threads"])
         if preflight_only:
             record["status"] = "preflight_normal_no_fits"
             record["readiness"] = "CONDITIONAL_NO_MEASUREMENTS"
             print(out)
             return out
         with fair.budget(SECONDS, EARLY_STOP_MIB) as check, threadpool_limits(limits=settings["threads"]):
-            expected = json.loads(
-                (config.RESULTS / "forecasting_baselines/20261012T093203Z/run.json").read_text()
-            )["data"]["processed_sha256"]
+            expected = snapshot.expected_processed_sha256()
             observed = fingerprint(dataset.PROCESSED)
             if expected != observed:
                 raise ValueError("Input differs from immutable benchmark")
@@ -165,7 +171,7 @@ def run(settings, execute=False, output=None, preflight_only=False):
                 for candidate in pilot_candidates(settings):
                     current = pressure()
                     pressure_records.append(current)
-                    admit(current)
+                    admit(current, settings["threads"])
                     check()
                     attempt = f"{candidate['id']}_h{h}"
                     record["active_attempt"] = attempt
@@ -247,8 +253,14 @@ def run(settings, execute=False, output=None, preflight_only=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=fair.DEFAULT)
+    parser.add_argument("--output", type=Path, help="new run directory; existing directories are rejected")
     execution = parser.add_mutually_exclusive_group()
     execution.add_argument("--execute-pilot", action="store_true")
     execution.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
-    run(json.loads(args.config.read_text()), args.execute_pilot, preflight_only=args.preflight_only)
+    run(
+        json.loads(args.config.read_text()),
+        args.execute_pilot,
+        args.output,
+        preflight_only=args.preflight_only,
+    )
