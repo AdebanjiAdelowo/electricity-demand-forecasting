@@ -51,7 +51,7 @@ cd electricity-demand-forecasting
 git bundle create gridcast.bundle main
 ```
 
-Upload `gridcast.bundle` (about 20 MB) to a Drive folder you choose. In Step 3
+Upload `gridcast.bundle` (about 13 MB at this commit) to a Drive folder you choose. In Step 3
 set `REPO_SOURCE = "bundle"`, `MOUNT_DRIVE = True` and `REPO_BUNDLE_PATH` to its
 path. The notebook ships with empty paths; nothing private is embedded.
 
@@ -265,13 +265,16 @@ must not be presented as Mac measurements, or the reverse.
 * The notebook kernel needs only the standard library (plus pandas, which
   Colab provides, to display Step 9). All GridCast code runs in the locked
   `.venv`.
-* None of this has been executed on a live Colab runtime yet. The first real
-  preflight is the next verification step.
+* None of this has been executed on a live Colab runtime yet. Locally, the
+  bundle checkout at the pinned commit was simulated and its dataset
+  verified against the committed approval without the ignored benchmark
+  record. The first real Colab preflight is the next verification step.
 
 ## Exact next action, after separate approval
 
-1. Open the notebook on a free CPU runtime and set `PINNED_COMMIT` to the commit
-   named in the final preparation report.
+1. Open the notebook on a free CPU runtime. `PINNED_COMMIT` defaults to
+   `32be70b38d2f75745d4fb69a7cc8e4083ec08d3b`, the commit containing this
+   preparation code. A later reviewed commit may be pinned instead.
 2. Run Steps 2–7 and record the preflight verdict.
 3. If READY or CONDITIONAL and pilot execution is approved in writing, set
    `AUTHORIZE_SIX_FIT_PILOT = True` and run Steps 8–11. Export to Drive.
