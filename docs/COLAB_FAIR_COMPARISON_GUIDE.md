@@ -2,14 +2,14 @@
 
 ## Status
 
-**COLAB PREPARATION COMPLETE; HISTORICAL PILOT NOT EXECUTED.** The notebook
-`notebooks/gridcast_fair_comparison_colab.ipynb` prepares and inspects a free
-Colab CPU runtime for the six-fit resource pilot described in
-[the resource-pilot record](FAIR_MODEL_COMPARISON_RESOURCE_PILOT.md). No real-data
-fit, historical search, selection or primary-test evaluation has run on Colab
-or anywhere else as part of this preparation. Running the pilot needs separate
-explicit approval. The full 204-fit search and 32 primary refits have no
-route through this notebook at all.
+**SIX-FIT COLAB CPU PILOT COMPLETE — 22 October 2026.** All six approved
+resource fits completed on the pinned execution commit after CONDITIONAL
+preflight (explicitly unlimited cgroup memory; no blocking failures).
+See [the measured pilot report](GRIDCAST_COLAB_SIX_FIT_PILOT_REPORT.md) for
+measurements and verified Drive evidence. Do not rerun the completed pilot
+as part of setup. The instructions below document the reproducible workflow.
+The full 204-fit search and 32 primary refits still require separate approval
+and have no route through this notebook.
 
 The scientific protocol is unchanged: same candidates (`r01`, `l02`, `l11`),
 horizons 1 and 168 h, fitting start 2015-08-01, target cutoff 2023-07-01,

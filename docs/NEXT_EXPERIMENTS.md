@@ -73,26 +73,28 @@ pilot. No GPU is needed. Any new long point-model fit requires approval.
 ## Priority 2: fair Ridge versus LightGBM tuning
 
 **Preparation completed; full experiment pending separate approval.**
-The [real-data resource-pilot preflight](FAIR_MODEL_COMPARISON_RESOURCE_PILOT.md)
-is **BLOCKED** by host memory-pressure warning (dispatch level 2). No real-data
-pilot fit ran; full-run cost estimates remain unverified. A six-fit guarded
-pilot entry point is implemented, but the full tuning/evaluation remains
-unauthorized. Recheck pressure and complete measurements before any readiness
-claim.
-**Colab CPU preparation is completed; historical execution remains PENDING.**
+The [October 14 local preflight](FAIR_MODEL_COMPARISON_RESOURCE_PILOT.md)
+was blocked by host memory-pressure warning (dispatch level 2), with zero fits.
+On October 22, 2026 the authorized Colab CPU resource pilot completed all six
+fits: 68.66 s internal wall time and 657.18 MiB process high-water RSS.
+Preflight was CONDITIONAL because cgroup memory was explicitly unlimited;
+all hard checks passed and the process supervisor remained active.
+**Six-fit resource pilot COMPLETE; full tuning and primary refits PENDING.**
 The [Colab guide](COLAB_FAIR_COMPARISON_GUIDE.md) and
 `notebooks/gridcast_fair_comparison_colab.ipynb` add a Linux resource-admission
 gate (`/proc/meminfo`, cgroup limit/usage, pressure stall, disk, CPU-only,
 two threads), committed dataset fingerprints, a supervising parent that kills
 the pilot at 2,048 MiB/330 s, run inspection and lightweight provenance export.
-The six fits, grid, cutoffs and caps are unchanged. No Colab session or
-real-data fit has run; the pilot still needs separate approval.
+The six fits, grid, cutoffs and caps are unchanged. The user has explicitly
+authorized the six-fit CPU resource pilot, conditional on successful preflight.
+The larger 204-fit search and 32 primary refits still require separate approval.
+See [the Colab pilot report](GRIDCAST_COLAB_SIX_FIT_PILOT_REPORT.md) for execution status.
 The reviewed [fair model comparison protocol](FAIR_MODEL_COMPARISON_PROTOCOL.md)
 and `configs/fair_model_comparison.json` supersede the provisional grid below
 this plan's earlier version. The framework provides a default dry run,
 synthetic smoke mode and separately authorized development/full execution.
-Only synthetic fixtures have been trained; no new historical search or
-primary-test model evaluation is claimed.
+The six historical resource fits are complete; no historical hyperparameter
+search or new primary-test model evaluation has run.
 
 **Question/design:** Compare no-weather Ridge and LightGBM with the identical
 fixed feature matrix, fitting-only median imputation/scaling, chronological
@@ -110,11 +112,14 @@ wall time and peak memory separately. Equal information and a common
 per-model time cap do not establish equal model complexity or actual cost.
 
 **Validation/resources:** Synthetic smoke passed in 4.080 s, peak 413.19 MiB.
-Historical fits are projected at 10–45 minutes, 0.7–2 GiB, 50–300 MiB outputs,
-with assumptions/uncertainty stated in the protocol. The configured campaign
+The earlier 10–45 minute, 0.7–2 GiB, 50–300 MiB full-run planning range
+remains unverified; the pilot does not measure full-search retention or
+larger final fitting spans. See the measured report before considering approval.
+The configured campaign
 ceiling is 60 minutes, each model search cap 30 minutes, CPU threads at most
 two, memory at most 2 GiB. Hitting a cap fails the campaign and requires
-approval to continue. No historical execution is authorized by preparation.
+approval to continue. The completed six-fit pilot does not authorize the
+204-fit search or 32 primary refits.
 Priorities 3–5 and their approval boundaries remain unchanged.
 
 ## Priority 3: classical SARIMAX and seasonal smoothing
@@ -241,8 +246,10 @@ explicit execution plus an already prepared project environment.
 The synchronization task completed code review, tests, row-level export and
 metric reproduction. Priority 1 subsequently completed short CPU development
 fits and interval evaluation, with explicit approval for a 2 GiB evaluation
-cap after the initial 1 GiB failure. No other proposed training experiment
-or acquisition was started. Approval is required before long shared-machine
+cap after the initial 1 GiB failure. The separately approved six-fit Colab CPU
+resource pilot subsequently completed
+on October 22, 2026. No larger proposed training experiment or acquisition
+was started. Approval is required before long shared-machine
 training, GPU/MPS jobs, remote execution, large downloads, paid APIs or cloud
 changes. Preserve all prior evidence and record every revised protocol as a
 new run rather than overwriting measured results.
