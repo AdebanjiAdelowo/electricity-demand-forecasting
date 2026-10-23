@@ -36,10 +36,10 @@ Full mode additionally needs the original `20261012T093203Z` reference inputs:
 
 They are ignored by Git. Preserve them privately in a Drive folder you select;
 never regenerate them or commit their contents. The approximately 12.79 MiB
-combined size excludes archive/container overhead. A future manual transfer
-can copy only these three immutable files from the existing local benchmark
-directory; do not upload the whole results tree. This preparation does not
-transfer the reference data or launch a Colab campaign.
+combined size excludes archive/container overhead. On October 23 these three
+existing immutable files were staged in the selected private Drive reference
+folder. No historical campaign was launched. Preserve the local originals;
+do not upload the whole results tree.
 
 `configs/approved_fair_reference.json` commits their approved SHA-256 values,
 Parquet schemas and row counts. Preflight hashes the complete files, reads
@@ -117,9 +117,10 @@ OS memory reservation: sub-interval spikes may be missed, and container OOM
 can act first. Parent termination also cannot run cleanup if Colab kills the
 entire VM; already-published persistent artifacts are the recovery evidence.
 Drive/FUSE flush semantics are provider-dependent. File fsync is required;
-directory fsync is attempted where the filesystem supports it. The actual
-full-run Drive/FUSE path and Linux launch guard still need live preflight/CI
-verification; passing local mocked tests is not a live Colab campaign claim.
+directory fsync is attempted where the filesystem supports it. The October 23 no-fit Colab preflight passed atomic file publication, file
+fsync and readback in the selected Drive export directory. Linux CI passed
+the launch guard. These checks do not prove survival of provider termination
+or completion of the full training campaign.
 
 Each fresh `fair_campaign_<UTC>/` contains:
 
@@ -185,3 +186,28 @@ package passed read-only integrity checks. The nine core scientific functions
 fit/predict and selection) are AST-identical to the reviewed parent version.
 Approved dataset and all reference-file hashes/metadata verify locally.
 The wider training-containing suite was not rerun on the shared Mac.
+
+Linux GitHub CI at source `3c0ea3dd4eb73b7df976b65255f837294b7912c4`
+passed: **204 tests plus 5 deeper integrity tests**. The Linux launch guard
+passed there. [CI evidence](https://github.com/AdebanjiAdelowo/electricity-demand-forecasting/actions/runs/39947981124).
+
+## Live Colab preparation evidence — 23 October 2026
+
+A clean checkout of source `3c0ea3dd4eb73b7df976b65255f837294b7912c4`
+completed the no-fit full-mode preflight on free Colab CPU: **CONDITIONAL**,
+no hard failures and **zero additional fits**. Python 3.12.3, core frozen
+dependencies, dataset hash/provenance, all three reference hashes and metadata,
+CPU-only settings and two threads passed. Available host RAM was 11.30 GiB,
+preflight process RSS 242.5 MiB and free VM disk 86.48 GiB; these are preflight
+measurements, not training peaks or guaranteed container capacity.
+
+The cgroup limit was effectively unlimited; no usable container ceiling was
+exposed. This caveat and the unchanged LightGBM 30-minute budget risk remain
+explicit. Atomic Drive publication, file fsync and readback passed. The JSON
+report and write probe were verified present privately in Drive.
+
+[Preflight JSON](https://drive.google.com/file/d/1LOH7ny3k0_Mf2b0PYHB6RZhzlwdlaLFs/view)
+is saved as `gridcast/exports/campaign_preflight_20261023T164856224063Z.json`.
+The six-fit pilot was not repeated, and no historical search or primary
+evaluation was launched. The next step remains a separate execution and
+resource-budget decision; preparation is not authorization.

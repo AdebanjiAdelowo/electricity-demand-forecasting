@@ -262,3 +262,14 @@ was started. Approval is required before long shared-machine
 training, GPU/MPS jobs, remote execution, large downloads, paid APIs or cloud
 changes. Preserve all prior evidence and record every revised protocol as a
 new run rather than overwriting measured results.
+
+### October 23 live campaign preflight follow-up
+
+Full-mode preparation at source `3c0ea3d` returned CONDITIONAL on free Colab
+CPU with no blocking checks and zero additional fits. Approved reference
+inputs are staged privately; fingerprints, frozen environment and atomic
+Drive write/fsync/readback passed. Linux CI passed 204 + 5 tests. An effective
+container ceiling was not exposed and the LightGBM 30-minute budget risk
+remains. Historical execution and primary evaluation are still pending
+separate authorization and the resource-budget decision. See the
+[campaign guide](FAIR_COMPARISON_CAMPAIGN_GUIDE.md#live-colab-preparation-evidence--23-october-2026).
