@@ -80,6 +80,11 @@ fits: 68.66 s internal wall time and 657.18 MiB process high-water RSS.
 Preflight was CONDITIONAL because cgroup memory was explicitly unlimited;
 all hard checks passed and the process supervisor remained active.
 **Six-fit resource pilot COMPLETE; full tuning and primary refits PENDING.**
+The [October 23 full-run review](FAIR_COMPARISON_FULL_RUN_READINESS.md)
+identifies missing baseline-input preflight, external full-run controls and
+durable evidence handling. A conservative timing proxy also exceeds the
+30-minute LightGBM search cap. Full Colab execution is blocked pending
+these infrastructure fixes and a resource-budget decision; no caps changed.
 The [Colab guide](COLAB_FAIR_COMPARISON_GUIDE.md) and
 `notebooks/gridcast_fair_comparison_colab.ipynb` add a Linux resource-admission
 gate (`/proc/meminfo`, cgroup limit/usage, pressure stall, disk, CPU-only,
