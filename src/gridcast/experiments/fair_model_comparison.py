@@ -6,7 +6,6 @@ import argparse
 import gc
 import json
 import os
-import pickle
 import platform
 import resource
 import signal
@@ -24,9 +23,10 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from threadpoolctl import threadpool_limits
 
-from gridcast import config, tracking
-from gridcast.data import dataset
+from gridcast import config, resources, tracking
+from gridcast.data import dataset, snapshot
 from gridcast.evaluation import fair_comparison as evaluation
+from gridcast.experiments import campaign_evidence as evidence
 from gridcast.experiments.revalidate import fingerprint
 from gridcast.features.build import FeatureSpec, make_features, one_hot_design
 from gridcast.models.base import train_mask
@@ -276,6 +276,8 @@ def fit_ledger(out):
     def save(event):
         with (out / "fit_events.jsonl").open("a") as handle:
             handle.write(json.dumps({"utc": str(pd.Timestamp.now(tz="UTC")), **event}) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
 
     return save
 
@@ -289,6 +291,7 @@ def search(df, settings, grid, out, check):
     start = pd.Timestamp(settings["train_start"])
     for name, choices in grid.items():
         model_started = time.perf_counter()
+        evidence.stage(out, f"search_{name}")
         for h in settings["horizons"]:
             for candidate in choices:
                 pieces = []
@@ -321,6 +324,23 @@ def search(df, settings, grid, out, check):
                         record["validation_rmse_mw"] = evaluation.summary(
                             eligible_block.y, eligible_block.yhat
                         )["rmse_mw"]
+                        try:
+                            evidence.save_fit(
+                                out,
+                                "search",
+                                f"{name}_{candidate['id']}_h{h}_dev{i + 1}",
+                                pred.assign(candidate_id=candidate["id"]),
+                                model,
+                                {
+                                    "model": name,
+                                    "h": h,
+                                    "candidate_id": candidate["id"],
+                                    "block": f"dev{i + 1}",
+                                    **record,
+                                },
+                            )
+                        except Exception as exc:
+                            raise evidence.PersistenceError("Fit evidence could not be committed") from exc
                         pieces.append(pred.assign(candidate_id=candidate["id"]))
                         fits.append(
                             {
@@ -336,6 +356,12 @@ def search(df, settings, grid, out, check):
                     except ResourceLimit:
                         raise
                     except Exception as exc:
+                        if isinstance(exc, (OSError, evidence.PersistenceError)):
+                            raise  # Artifact failures must not silently select a different candidate.
+                        evidence.write_json(
+                            out / "fit_failures" / f"{name}_{candidate['id']}_h{h}_dev{i + 1}.json",
+                            {"status": "failed", "error": f"{type(exc).__name__}: {exc}"},
+                        )
                         complete = False
                         failure = f"dev{i + 1}: {type(exc).__name__}: {exc}"
                         fits.append(
@@ -374,10 +400,17 @@ def search(df, settings, grid, out, check):
                 )
                 if len(joined):
                     frames.append(joined)
-                pd.DataFrame(table).to_csv(out / "candidate_scores.csv", index=False)
-                pd.DataFrame(fits).to_csv(out / "fits.csv", index=False)
+                evidence.atomic_write(
+                    out / "candidate_scores.csv",
+                    lambda p: pd.DataFrame(table).to_csv(p, index=False),
+                    replace=True,
+                )
+                evidence.atomic_write(
+                    out / "fits.csv", lambda p: pd.DataFrame(fits).to_csv(p, index=False), replace=True
+                )
                 if time.perf_counter() - model_started > settings["model_search_seconds"]:
                     raise ResourceLimit(f"{name} search reached its common model budget")
+    evidence.stage(out, "selection")
     table = pd.DataFrame(table)
     chosen = select(table)
     prediction = pd.concat(frames, ignore_index=True)
@@ -389,12 +422,13 @@ def search(df, settings, grid, out, check):
         "validation_predictions_sha256": fingerprint(out / "development_candidate_predictions.parquet"),
         "frozen_at_utc": str(pd.Timestamp.now(tz="UTC")),
     }
-    (out / "selection.json").write_text(json.dumps(frozen, indent=2) + "\n")
+    evidence.write_json(out / "selection.json", frozen)
     return chosen, fits
 
 
 def evaluate(df, settings, grid, chosen, folds, out, check, synthetic=False):
     frozen = fingerprint(out / "selection.json")
+    evidence.stage(out, "primary")
     predictions = []
     thresholds = {}
     all_tasks = []
@@ -415,8 +449,29 @@ def evaluate(df, settings, grid, chosen, folds, out, check, synthetic=False):
                 )
                 predictions.append(pred)
                 fit_records.append({"fold": fold, "h": h, "model": name, **record})
-                with (out / f"{name}_{fold}_h{h}.pkl").open("wb") as handle:
-                    pickle.dump(model, handle)
+
+                model_path = out / f"{name}_{fold}_h{h}.pkl"
+                evidence.save_model(model_path, model)
+                evidence.save_fit(
+                    out,
+                    "primary",
+                    f"{name}_{fold}_h{h}",
+                    pred,
+                    None,
+                    {
+                        "fold": fold,
+                        "h": h,
+                        "model": name,
+                        "model_file": model_path.name,
+                        "model_sha256": fingerprint(model_path),
+                        **record,
+                    },
+                )
+                evidence.atomic_write(
+                    out / "evaluation_fits.csv",
+                    lambda p: pd.DataFrame(fit_records).to_csv(p, index=False),
+                    replace=True,
+                )
                 del model
                 gc.collect()
     frame = pd.concat(predictions, ignore_index=True)
@@ -428,10 +483,12 @@ def evaluate(df, settings, grid, chosen, folds, out, check, synthetic=False):
         paired, tuple(settings["bootstrap_days"]), settings["bootstrap_replicates"], settings["seed"]
     ).to_csv(out / "paired_bootstrap.csv", index=False)
     (out / "thresholds.json").write_text(json.dumps(thresholds, indent=2) + "\n")
-    pd.DataFrame(fit_records).to_csv(out / "evaluation_fits.csv", index=False)
+    evidence.atomic_write(
+        out / "evaluation_fits.csv", lambda p: pd.DataFrame(fit_records).to_csv(p, index=False), replace=True
+    )
     if not synthetic:
         # Unchanged reference predictions are not used for selection or tuning.
-        baseline = config.RESULTS / "forecasting_baselines/20261012T093203Z"
+        baseline = evidence.baseline_dir()
         refs = []
         for name in ["ridge", "lightgbm"]:
             p = pd.read_parquet(baseline / f"{name}.parquet")
@@ -524,15 +581,6 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
                 }
             ],
         }
-    else:
-        df = load_input()
-        expected = json.loads(
-            (config.RESULTS / "forecasting_baselines/20261012T093203Z/run.json").read_text()
-        )["data"]["processed_sha256"]
-        if fingerprint(dataset.PROCESSED) != expected:
-            raise ValueError("Dataset changed since original benchmark")
-        if mode == "development":
-            df = df[df.index < pd.Timestamp("2024-04-01", tz="UTC")]
     stamp = pd.Timestamp.now(tz="UTC").strftime("%Y%m%dT%H%M%S%fZ")
     out = output or config.RESULTS / "fair_model_comparison" / stamp
     out.mkdir(parents=True, exist_ok=False)
@@ -540,11 +588,7 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
         json.dumps({"requested": original, "executed": settings, "executed_grid": g, "mode": mode}, indent=2)
         + "\n"
     )
-    inputs = {
-        str(p.relative_to(config.ROOT)): fingerprint(p)
-        for p in [dataset.PROCESSED, dataset.MANIFEST]
-        if p.exists()
-    }
+    inputs = {}
     metadata = {
         "git": tracking.git_state(),
         "python": sys.version,
@@ -563,20 +607,80 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
             str(p.relative_to(config.ROOT)): fingerprint(p) for p in (config.ROOT / "src").rglob("*.py")
         },
         "stage": mode,
-        "full_benchmark_executed": mode == "full",
+        "full_benchmark_executed": False,
+        "primary_evaluation_started": False,
         "actual_grid": g,
         "key": evaluation.KEY,
         "primary_folds": [tracking.fold_dict(f) for f in config.TEST_FOLDS],
     }
     status = "failed"
     try:
+        evidence.stage(out, "startup")
         with (
             budget(
-                settings["preparation_seconds"] if is_smoke else settings["campaign_seconds"],
+                (settings["preparation_seconds"] if is_smoke else settings["campaign_seconds"])
+                - (time.perf_counter() - started),
                 settings["memory_mib"],
-            ) as check,
+            ) as budget_check,
             threadpool_limits(limits=settings["threads"]),
         ):
+
+            def check():
+                budget_check()
+                if not is_smoke:
+                    if sys.platform == "linux":
+                        resources.linux_admit(
+                            resources.linux_snapshot(disk_path=out),
+                            settings["memory_mib"],
+                            settings["threads"],
+                        )
+                    elif sys.platform == "darwin":
+                        from gridcast.experiments import fair_resource_pilot
+
+                        fair_resource_pilot.admit(fair_resource_pilot.pressure())
+                    else:
+                        raise ResourceLimit("No verified admission gate on this platform")
+
+            if not is_smoke:
+                if sys.platform == "linux" and os.environ.get("GRIDCAST_CAMPAIGN_PARENT_PID") != str(
+                    os.getppid()
+                ):
+                    raise PermissionError("Historical Linux runs require the fair_campaign supervisor")
+                verified = snapshot.verify()
+                if not verified["ok"]:
+                    raise ValueError(f"Dataset changed or unavailable: {verified['problems']}")
+                if mode == "full":
+                    references = evidence.verify_references()
+                    evidence.write_json(out / "reference_preflight.json", references)
+                    if not references["ok"]:
+                        raise ValueError(f"Reference input preflight failed: {references['problems']}")
+                inputs.update(
+                    {
+                        str(dataset.PROCESSED): verified["processed_sha256"],
+                        str(dataset.MANIFEST): verified["manifest_sha256"],
+                    }
+                )
+                if mode == "full":
+                    inputs.update(
+                        {
+                            str(evidence.baseline_dir() / name): digest
+                            for name, digest in references["files"].items()
+                        }
+                    )
+                df = load_input()
+                if any(fingerprint(Path(path)) != expected for path, expected in inputs.items()):
+                    raise ValueError("Input mutated during loading")
+                if mode == "development":
+                    df = df[df.index < pd.Timestamp("2024-04-01", tz="UTC")]
+            if is_smoke:
+                inputs.update(
+                    {
+                        str(p.relative_to(config.ROOT)): fingerprint(p)
+                        for p in (dataset.PROCESSED, dataset.MANIFEST)
+                        if p.exists()
+                    }
+                )
+            check()
             chosen, fits = search(df, settings, g, out, check)
             if is_smoke or mode == "full":
                 folds = (
@@ -595,7 +699,9 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
                         for f in config.TEST_FOLDS
                     ]
                 )
+                metadata["primary_evaluation_started"] = not is_smoke
                 evaluate(df, settings, g, chosen, folds, out, check, is_smoke)
+                metadata["full_benchmark_executed"] = mode == "full"
             metadata["search_attempt_count"] = len(fits)
             metadata["search_completed_fit_count"] = sum(not r.get("failed", False) for r in fits)
             metadata["search_failed_attempt_count"] = sum(bool(r.get("failed", False)) for r in fits)
@@ -608,18 +714,28 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
             for path, expected in inputs.items():
                 if fingerprint(config.ROOT / path) != expected:
                     raise ValueError("Input mutated during experiment")
+        evidence.stage(out, "finished")
         status = "completed"
+    except KeyboardInterrupt:
+        status = "interrupted"
+        metadata["error"] = "Interrupted; completed per-fit bundles retained"
+        raise
     except Exception as exc:
         metadata["error"] = f"{type(exc).__name__}: {exc}"
         raise
     finally:
         if (out / "fit_events.jsonl").exists():
-            events = [json.loads(line) for line in (out / "fit_events.jsonl").read_text().splitlines()]
+            events = []
+            for line in (out / "fit_events.jsonl").read_text().splitlines():
+                try:
+                    events.append(json.loads(line))
+                except ValueError:
+                    metadata["fit_ledger_incomplete"] = True
             metadata["actual_fit_started_count"] = sum(e["event"] == "fit_started" for e in events)
             metadata["actual_fit_completed_count"] = sum(e["event"] == "fit_completed" for e in events)
             metadata["actual_fit_failed_count"] = sum(e["event"] == "fit_failed" for e in events)
         metadata.update(status=status, wall_seconds=time.perf_counter() - started, peak_rss_bytes=peak_rss())
-        (out / "run.json").write_text(json.dumps(metadata, indent=2, default=str) + "\n")
+        evidence.write_json(out / "run.json", metadata)
     print(out)
     return out
 
@@ -627,6 +743,7 @@ def run(settings, mode="dry-run", historical=False, primary=False, output=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=DEFAULT)
+    parser.add_argument("--output", type=Path, help="new output directory; never reuse a run")
     parser.add_argument("--mode", choices=["dry-run", "smoke", "development", "full"], default="dry-run")
     parser.add_argument("--authorize-historical-search", action="store_true")
     parser.add_argument("--authorize-primary-evaluation", action="store_true")
@@ -636,4 +753,5 @@ if __name__ == "__main__":
         args.mode,
         args.authorize_historical_search,
         args.authorize_primary_evaluation,
+        args.output,
     )

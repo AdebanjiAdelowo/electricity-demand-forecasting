@@ -3,6 +3,14 @@
 Review date: 23 October 2026. Reviewed source: `64f53fbbe38d1f041024f24f400a63d4daf563c3`;
 experiment implementation remains identical to pilot commit `32be70b`.
 
+## Subsequent infrastructure preparation
+
+The [campaign guide](FAIR_COMPARISON_CAMPAIGN_GUIDE.md) records implementation
+and mocked validation of the input, supervision and persistence work below.
+The findings here describe the pre-change source. Live Linux/Drive verification,
+the resource-budget decision and full execution remain pending. This update
+does not revise the measured pilot or authorize additional historical fits.
+
 ## Decision
 
 **BLOCKED for full Colab execution in the current implementation.** The

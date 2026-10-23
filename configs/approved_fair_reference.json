@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "baseline_run": "20261012T093203Z",
+  "files": {
+    "run.json": {
+      "sha256": "e3e857b6e65396c8061a1745372f4313661f8d602b90263de1a5844ebf856a2f",
+      "bytes": 10424
+    },
+    "ridge.parquet": {
+      "sha256": "c1cc44d33282c680444f7a1d53e6f2fe9e0eda00840b1e72ccf9fdf105c865f0",
+      "bytes": 1953098,
+      "rows": 105024,
+      "schema": {
+        "model": "string",
+        "origin": "timestamp[us, tz=UTC]",
+        "h": "int64",
+        "regime": "string",
+        "yhat": "double",
+        "fold": "string",
+        "target_time": "timestamp[ns, tz=UTC]",
+        "y": "double",
+        "target_imputed": "bool",
+        "block": "string"
+      }
+    },
+    "lightgbm.parquet": {
+      "sha256": "d4c2b0dbeb29d80526946f32b14b16a887e2b50f7e0203ce11e44c1d1f3ec0da",
+      "bytes": 11444514,
+      "rows": 105024,
+      "schema": {
+        "model": "string",
+        "origin": "timestamp[us, tz=UTC]",
+        "h": "int64",
+        "regime": "string",
+        "yhat": "double",
+        "q0.025": "double",
+        "q0.05": "double",
+        "q0.1": "double",
+        "q0.25": "double",
+        "q0.5": "double",
+        "q0.75": "double",
+        "q0.9": "double",
+        "q0.95": "double",
+        "q0.975": "double",
+        "fold": "string",
+        "target_time": "timestamp[ns, tz=UTC]",
+        "y": "double",
+        "target_imputed": "bool",
+        "block": "string"
+      }
+    }
+  }
+}

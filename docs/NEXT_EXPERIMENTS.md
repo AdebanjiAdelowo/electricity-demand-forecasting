@@ -85,6 +85,10 @@ identifies missing baseline-input preflight, external full-run controls and
 durable evidence handling. A conservative timing proxy also exceeds the
 30-minute LightGBM search cap. Full Colab execution is blocked pending
 these infrastructure fixes and a resource-budget decision; no caps changed.
+The [campaign preparation guide](FAIR_COMPARISON_CAMPAIGN_GUIDE.md) now documents
+implemented input preflight, a separate Linux supervisor and persistent per-fit
+evidence. Local mocked validation is complete; live Linux/Drive validation and
+the resource-budget/authorization decisions remain pending.
 The [Colab guide](COLAB_FAIR_COMPARISON_GUIDE.md) and
 `notebooks/gridcast_fair_comparison_colab.ipynb` add a Linux resource-admission
 gate (`/proc/meminfo`, cgroup limit/usage, pressure stall, disk, CPU-only,
